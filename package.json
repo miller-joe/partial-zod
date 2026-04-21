@@ -1,0 +1,77 @@
+{
+  "name": "partial-zod",
+  "version": "0.1.0",
+  "description": "Framework-agnostic streaming JSON parser for LLM outputs, with Zod schema-aware partial extraction and auto-repair.",
+  "license": "MIT",
+  "author": "Joe Miller <joe@indivision.net> (https://github.com/miller-joe)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./openai": {
+      "types": "./dist/adapters/openai.d.ts",
+      "import": "./dist/adapters/openai.js"
+    },
+    "./anthropic": {
+      "types": "./dist/adapters/anthropic.d.ts",
+      "import": "./dist/adapters/anthropic.js"
+    },
+    "./ollama": {
+      "types": "./dist/adapters/ollama.d.ts",
+      "import": "./dist/adapters/ollama.js"
+    },
+    "./fetch": {
+      "types": "./dist/adapters/fetch.d.ts",
+      "import": "./dist/adapters/fetch.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "zod": "^3.22.0 || ^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0",
+    "zod": "^3.23.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miller-joe/partial-zod.git"
+  },
+  "bugs": {
+    "url": "https://github.com/miller-joe/partial-zod/issues"
+  },
+  "homepage": "https://github.com/miller-joe/partial-zod#readme",
+  "keywords": [
+    "zod",
+    "llm",
+    "streaming",
+    "json",
+    "partial-json",
+    "openai",
+    "anthropic",
+    "ollama",
+    "typescript",
+    "schema",
+    "parser"
+  ]
+}
