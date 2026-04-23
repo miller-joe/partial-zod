@@ -8,3 +8,4 @@ coverage
 !.env.example
 .npmrc
 LAUNCH.md
+dist-examples/
