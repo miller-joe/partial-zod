@@ -26,11 +26,18 @@ async function* charStream(s: string): AsyncIterable<string> {
   }
 }
 
-let tick = 0;
-for await (const partial of streamParse(charStream(fullJson), Story)) {
-  tick++;
-  process.stdout.write("\x1Bc");
-  console.log(`— partial #${tick} —\n`);
-  console.log(JSON.stringify(partial, null, 2));
+async function main() {
+  let tick = 0;
+  for await (const partial of streamParse(charStream(fullJson), Story)) {
+    tick++;
+    process.stdout.write("\x1Bc");
+    console.log(`— partial #${tick} —\n`);
+    console.log(JSON.stringify(partial, null, 2));
+  }
+  console.log("\nStream complete.");
 }
-console.log("\nStream complete.");
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
