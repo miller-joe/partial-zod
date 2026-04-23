@@ -7,48 +7,34 @@
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/miller-joe?style=social&logo=github)](https://github.com/sponsors/miller-joe)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/indivisionjoe)
 
-**The lightweight, framework-agnostic streaming JSON parser for LLM outputs.** Zod-typed partials as each chunk arrives, zero runtime deps beyond Zod, and native adapters for OpenAI, Anthropic, Ollama, and raw `fetch`/SSE.
+Streaming JSON parser for LLM outputs. Yields typed Zod partials as the stream arrives. Zero runtime deps beyond Zod. Native adapters for OpenAI, Anthropic, Ollama, and raw `fetch`/SSE.
 
 ```ts
 import { streamParse } from "partial-zod";
 import { fromOpenAI } from "partial-zod/openai";
 
 for await (const partial of streamParse(fromOpenAI(stream), MySchema)) {
-  // { name: "ac" } → { name: "acme", price: 49.99 } → { name: "acme", price: 49.99, tags: ["elec"] } → ...
+  // { name: "ac" }
+  // { name: "acme", price: 49.99 }
+  // { name: "acme", price: 49.99, tags: ["elec"] }
+  // ...
 }
 ```
 
 See [`examples/`](./examples/) for a fully offline demo you can run without any API key.
 
-## Why this, not [`zod-stream`](https://github.com/hack-dance/island-ai)?
+## vs. zod-stream
 
-`zod-stream` is the established player in this niche (part of the Instructor-JS / hack-dance stack). It's great if you're already inside that ecosystem. `partial-zod` exists for the cases where you're not:
+[`zod-stream`](https://github.com/hack-dance/island-ai) is the established library in this niche. It's part of the Instructor-JS / hack-dance stack and works well if you're already using it. partial-zod exists for when you aren't: one function, no ecosystem buy-in, no runtime dependencies past Zod.
 
-| | zod-stream | **partial-zod** |
+| | zod-stream | partial-zod |
 |---|---|---|
-| API shape | Client class (`ZodStream(...)`) | Single function (`streamParse(src, schema)`) |
-| Tied to an SDK ecosystem | Instructor-JS / hack-dance | None |
-| OpenAI support | Native | Native |
-| Anthropic / Ollama / raw fetch | Via `llm-polyglot` (OpenAI-compatible wrapper) | Native subpath adapters |
-| Tool-call streaming | ✅ | ✅ (OpenAI `tool_calls`, Anthropic `input_json_delta`) |
-| Runtime dependencies | Several | **Zero** (Zod is a peer) |
-| Package size (minzip) | Larger (monorepo deps) | ~10 KB |
-
-Use `zod-stream` if you want the full Instructor experience. Use `partial-zod` if you want a single function, zero deps, and no opinions about which SDK you use.
-
-## Why partial streaming matters
-
-LLMs stream *text*. If you asked for JSON, the JSON arrives in fragments:
-
-```
-t=0ms:   {
-t=200ms: {"name":
-t=400ms: {"name": "ac
-t=600ms: {"name": "acme", "price":
-t=800ms: {"name": "acme", "price": 49.99, "tags": ["elec
-```
-
-None of those in-between strings are valid JSON, so `JSON.parse` throws. `partial-zod` buffers the stream, auto-repairs the partial JSON, validates against your Zod schema, and yields a typed `Partial<T>` each time the state changes. Your UI can render as the response arrives instead of waiting for the final token.
+| API | `ZodStream(...)` client class | `streamParse(source, schema)` function |
+| Ecosystem | Instructor-JS / hack-dance | None |
+| OpenAI | Native | Native |
+| Anthropic / Ollama / raw fetch | Via `llm-polyglot` wrapper | Native subpath adapters |
+| Tool-call streaming | Yes | Yes (OpenAI `tool_calls`, Anthropic `input_json_delta`) |
+| Runtime dependencies | Several | Zero (Zod is a peer) |
 
 ## Install
 
@@ -56,7 +42,7 @@ None of those in-between strings are valid JSON, so `JSON.parse` throws. `partia
 npm install partial-zod zod
 ```
 
-Node ≥ 18. Zod 3.22+ or 4.x as a peer dependency.
+Node 18+. Zod 3.22+ or 4.x as a peer.
 
 ## Usage
 
@@ -86,7 +72,7 @@ for await (const partial of streamParse(fromOpenAI(completion), Product)) {
 }
 ```
 
-For tool-call streaming (JSON arrives in `delta.tool_calls[i].function.arguments`):
+Tool-call streaming (JSON arrives in `delta.tool_calls[i].function.arguments`):
 
 ```ts
 import { fromOpenAIToolCall } from "partial-zod/openai";
@@ -133,7 +119,7 @@ const stream = await ollama.chat({
 for await (const partial of streamParse(fromOllama(stream), Product)) { }
 ```
 
-Raw HTTP (no `ollama` client):
+Raw HTTP, no `ollama` client:
 
 ```ts
 import { fromOllamaNdjson } from "partial-zod/ollama";
@@ -147,7 +133,7 @@ for await (const partial of streamParse(fromOllamaNdjson(res.body!), Product)) {
 
 ### Raw fetch + SSE
 
-For any provider with SSE framing (`data: ...\n\n`):
+Any provider using SSE framing (`data: ...\n\n`):
 
 ```ts
 import { streamParse } from "partial-zod";
@@ -164,43 +150,45 @@ For raw byte streams with no framing, use `fromReadableStream`.
 
 ## API
 
-### `streamParse(source, schema, options?)`
+**`streamParse(source, schema, options?)`**
 
-- `source: AsyncIterable<string>` — text chunks (decoded to UTF-8 string, not bytes or tokens)
-- `schema: ZodTypeAny` — Zod schema describing the expected output
-- `options.transformChunk?: (chunk: string) => string | null` — preprocess each raw chunk (e.g. strip SSE framing). Return `null` to skip a chunk.
+- `source`: `AsyncIterable<string>`, text chunks (decoded to UTF-8 string, not bytes).
+- `schema`: any `ZodTypeAny`.
+- `options.transformChunk?: (chunk: string) => string | null` preprocesses each raw chunk (e.g. strips SSE framing). Return `null` to skip.
 
 Returns `AsyncGenerator<DeepPartial<T>>` that yields each time the parsed state strictly changes.
 
-### `parsePartial(input, schema)`
+**`parsePartial(input, schema)`**
 
-Non-streaming equivalent — takes a full (possibly truncated) JSON string and returns the best-effort `DeepPartial<T>`. Useful for testing, and for endpoints that batch the final truncated response.
+Non-streaming equivalent. Takes a full (possibly truncated) JSON string and returns the best-effort `DeepPartial<T>`.
 
-### `repairPartialJson(input)`
+**`repairPartialJson(input)`**
 
-The low-level repair primitive. Takes a possibly-truncated JSON string and returns a valid JSON string representing the best-effort interpretation. Useful if you want to do your own validation on top.
+The low-level repair primitive. Takes a possibly-truncated JSON string, returns a valid JSON string representing the best interpretation available.
 
 ## How the repair works
 
-`partial-zod` is tuned for the narrow class of errors LLM streams produce: a valid JSON string truncated at an arbitrary position. It walks the buffer as a tokenizer, tracks a stack of open contexts (objects and arrays), records a "last safe end" within each context after every complete member, and on EOF rolls back any partial trailing member and closes the stack.
+The repair is tuned for one failure mode: a valid JSON string truncated at an arbitrary position (which is what LLM streams produce when you look at the buffer mid-response). It walks the buffer as a tokenizer, tracks a stack of open contexts, records a "last safe end" within each context after every complete member, and on EOF rolls back any partial trailing member before closing the stack.
 
-Conservative choices to keep partial emissions stable:
+Key choices that keep partial emissions stable:
 
-- **Strings recover** — close with a synthetic `"`, backing off any dangling escape sequence.
-- **Incomplete numbers drop** — `49` at EOF could still be receiving digits (becoming `493`), so numbers require a terminator (comma, closing brace, whitespace) to be considered complete.
-- **Incomplete keywords drop** — `tru`, `fa`, `nu` are dropped until their final character arrives.
-- **Incomplete keys drop** — object keys still being streamed are dropped along with their pair.
-- **Empty trailing containers drop** — if we entered an object/array but haven't completed a single member by EOF, the whole container is rolled back *including* the parent's leading comma/key/colon, so you don't see `{ items: [{x:1}, {}] }` blink into existence before `{ items: [{x:1}, {x:2}] }`.
+- Strings recover. The parser closes them with a synthetic `"`, backing off any dangling escape.
+- Incomplete numbers drop until terminated. A trailing `49` could still be receiving digits (becoming `493`), so numbers need a terminator (comma, brace, whitespace) before committing.
+- Incomplete keywords drop. `tru`, `fa`, `nu` are not committed until their final character arrives.
+- Incomplete keys drop. Object keys still being streamed are dropped together with their pair.
+- Empty trailing containers drop. If a nested object or array has been entered but no complete member has arrived by EOF, the whole container is rolled back, including the parent's leading comma, key, and colon. You don't see `{ items: [{x:1}, {}] }` blink into existence before `{ items: [{x:1}, {x:2}] }`.
 
 ## Roadmap
 
-- [x] Core streaming parser + Zod schema-aware partials
-- [x] Auto-repair for strings, arrays, objects, numbers, keywords, trailing commas
-- [x] Adapters: `partial-zod/openai`, `partial-zod/anthropic`, `partial-zod/ollama`, `partial-zod/fetch`
-- [x] Tool-call streaming (OpenAI `tool_calls`, Anthropic `input_json_delta`)
-- [ ] Discriminated unions (best-effort variant selection as partials stream in)
-- [ ] Vitest matcher helpers for asserting partial states
-- [ ] Async schema-guided repair (drop fields whose types can't match even after repair)
+Shipped in v0.1: the core parser, Zod-aware partials, truncation-tuned repair, adapters for OpenAI / Anthropic / Ollama / raw fetch, and tool-call streaming.
+
+Planned, in no particular order:
+
+- Discriminated unions with best-effort variant selection as partials stream in.
+- Vitest matcher helpers for asserting intermediate partial states.
+- Async schema-guided repair that drops fields whose types can't match even after repair.
+
+Issues and PRs welcome.
 
 ## License
 
