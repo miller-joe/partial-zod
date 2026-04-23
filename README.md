@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/partial-zod.svg)](https://www.npmjs.com/package/partial-zod)
 [![CI](https://github.com/miller-joe/partial-zod/actions/workflows/ci.yml/badge.svg)](https://github.com/miller-joe/partial-zod/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/npm/l/partial-zod.svg)](./LICENSE)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/partial-zod)](https://bundlephobia.com/package/partial-zod)
+[![install size](https://packagephobia.com/badge?p=partial-zod)](https://packagephobia.com/result?p=partial-zod)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/miller-joe?style=social&logo=github)](https://github.com/sponsors/miller-joe)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/indivisionjoe)
 
@@ -21,7 +21,7 @@ for await (const partial of streamParse(fromOpenAI(stream), MySchema)) {
 }
 ```
 
-See [`examples/`](./examples/) for a fully offline demo you can run without any API key.
+See [`examples/`](./examples/) for a fully offline demo, or [open it in Stackblitz](https://stackblitz.com/github/miller-joe/partial-zod?file=examples/simulated.ts&startScript=demo) to watch the partials stream in-browser.
 
 ## vs. zod-stream
 
